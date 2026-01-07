@@ -38,9 +38,9 @@ export class CalComInfrastructureStack extends cdk.Stack {
     });
 
     dbSecurityGroup.addIngressRule(
-      ec2.Peer.ipv4(vpc.vpcCidrBlock),
+      ec2.Peer.anyIpv4(),
       ec2.Port.tcp(5432),
-      'Allow PostgreSQL access from within VPC'
+      'Allow PostgreSQL access from anywhere'
     );
 
     const dbCredentials = new secretsmanager.Secret(this, 'CalComDBCredentials', {
@@ -54,7 +54,7 @@ export class CalComInfrastructureStack extends cdk.Stack {
       },
     });
 
-    const dbInstance = new rds.DatabaseInstance(this, 'CalComDatabase', {
+    const dbInstance = new rds.DatabaseInstance(this, 'CalComDatabasePublic', {
       engine: rds.DatabaseInstanceEngine.postgres({
         version: rds.PostgresEngineVersion.VER_15,
       }),
@@ -64,7 +64,7 @@ export class CalComInfrastructureStack extends cdk.Stack {
       ),
       vpc,
       vpcSubnets: {
-        subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
+        subnetType: ec2.SubnetType.PUBLIC,
       },
       securityGroups: [dbSecurityGroup],
       databaseName: 'calcom',
@@ -76,7 +76,7 @@ export class CalComInfrastructureStack extends cdk.Stack {
       deleteAutomatedBackups: true,
       removalPolicy: cdk.RemovalPolicy.SNAPSHOT,
       deletionProtection: false,
-      publiclyAccessible: false,
+      publiclyAccessible: true,
       multiAz: false,
     });
 
